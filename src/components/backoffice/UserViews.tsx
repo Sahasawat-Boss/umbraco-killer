@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Workspace, NameInput } from "./Workspace";
 import { Tree } from "./Tree";
-import { Box, Button, Dialog, Input, PropertyRow, Select, Toggle, Tag } from "../ui";
+import { Box, Button, Dialog, Input, PasswordInput, PropertyRow, Select, Toggle, Tag } from "../ui";
 import { useToast } from "../toast";
 import { deleteUser, saveUser } from "@/actions/users";
 import { formatDate, initials } from "@/lib/utils";
@@ -93,7 +93,7 @@ export function UserEditor({
             </Select>
           </PropertyRow>
           <PropertyRow label={user ? "Reset password" : "Password"} mandatory={!user} description="At least 10 characters">
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
           </PropertyRow>
           <PropertyRow label="Disabled" description="Disabled users cannot log in.">
             <Toggle checked={disabled} onChange={setDisabled} disabled={isSelf} />

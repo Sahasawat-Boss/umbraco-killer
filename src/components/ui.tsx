@@ -1,7 +1,7 @@
 "use client";
 
-import { forwardRef, useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
-import { X, Loader2 } from "lucide-react";
+import { forwardRef, useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { X, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Look = "primary" | "positive" | "secondary" | "outline" | "ghost" | "danger";
@@ -44,6 +44,29 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
     return <input ref={ref} className={cn(fieldBase, "h-9", invalid && "border-brand-600 bg-brand-50", className)} {...rest} />;
   },
 );
+
+/** Password field with a show/hide (eye) toggle */
+export const PasswordInput = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & { invalid?: boolean }
+>(function PasswordInput({ className, ...rest }, ref) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input ref={ref} type={show ? "text" : "password"} className={cn("pr-10", className)} {...rest} />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted hover:text-brand-700"
+        aria-label={show ? "Hide password" : "Show password"}
+        title={show ? "Hide password" : "Show password"}
+        tabIndex={-1}
+      >
+        {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+      </button>
+    </div>
+  );
+});
 
 export function Textarea({ className, invalid, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean }) {
   return <textarea className={cn(fieldBase, "py-2 leading-relaxed", invalid && "border-brand-600 bg-brand-50", className)} {...rest} />;

@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { loginAction, installAction } from "@/actions/auth";
-import { Button, Input, Checkbox } from "./ui";
+import { Button, Input, Checkbox, PasswordInput } from "./ui";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -21,7 +21,7 @@ export function LoginForm() {
         <Input name="email" type="email" autoComplete="username" required autoFocus />
       </Field>
       <Field label="Password">
-        <Input name="password" type="password" autoComplete="current-password" required />
+        <PasswordInput name="password" autoComplete="current-password" required />
       </Field>
       {state?.error && <p className="text-sm font-bold text-brand-700">{state.error}</p>}
       <Button look="positive" type="submit" busy={pending} className="w-full h-11">
@@ -43,7 +43,7 @@ export function InstallForm() {
         <Input name="email" type="email" required />
       </Field>
       <Field label="Password">
-        <Input name="password" type="password" minLength={10} required />
+        <PasswordInput name="password" minLength={10} required />
         <span className="mt-1 block text-xs text-muted">At least 10 characters</span>
       </Field>
       <input type="hidden" name="starterKit" value={starter ? "on" : ""} />

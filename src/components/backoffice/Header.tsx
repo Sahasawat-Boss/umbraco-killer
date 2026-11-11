@@ -10,7 +10,7 @@ import { Icon } from "@/lib/icons";
 import { searchAll, type SearchHit } from "@/actions/search";
 import { logoutAction } from "@/actions/auth";
 import { changeOwnPassword } from "@/actions/users";
-import { Button, Input, SidePanel } from "../ui";
+import { Button, Input, PasswordInput, SidePanel } from "../ui";
 import { useToast } from "../toast";
 
 export function Header({
@@ -181,8 +181,8 @@ function UserPanel({ open, onClose, user }: { open: boolean; onClose: () => void
         </div>
         <div className="space-y-2 rounded-[6px] bg-white p-4">
           <div className="mb-1 flex items-center gap-2 font-bold"><KeyRound className="size-4" /> Change password</div>
-          <Input type="password" placeholder="Current password" value={cur} onChange={(e) => setCur(e.target.value)} />
-          <Input type="password" placeholder="New password (10+ chars)" value={next} onChange={(e) => setNext(e.target.value)} />
+          <PasswordInput placeholder="Current password" value={cur} onChange={(e) => setCur(e.target.value)} />
+          <PasswordInput placeholder="New password (10+ chars)" value={next} onChange={(e) => setNext(e.target.value)} />
           <Button
             look="outline"
             busy={busy}
