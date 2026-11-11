@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Backoffice user (Users section)
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  /// admin | editor | writer
+  role         String       @default("editor")
+  disabled     Boolean      @default(false)
+  lastLoginAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  audits       AuditEntry[]
+}
+
+/// A configured property editor (Settings > Data Types)
+model DataType {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  editorAlias String
+  config      Json           @default("{}")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  properties  PropertyType[]
+}
+
+/// Settings > Document Types
+model DocumentType {
+  id              String          @id @default(uuid())
+  alias           String          @unique
+  name            String
+  icon            String          @default("FileText")
+  description     String          @default("")
+  allowedAtRoot   Boolean         @default(false)
+  isElement       Boolean         @default(false)
+  allowedChildIds String[]        @default([])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  groups          PropertyGroup[]
+  documents       Document[]
+}
+
+model PropertyGroup {
+  id             String         @id @default(uuid())
+  documentTypeId String
+  documentType   DocumentType   @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
+  name           String
+  sortOrder      Int            @default(0)
+  properties     PropertyType[]
+}
+
+model PropertyType {
+  id              String        @id @default(uuid())
+  groupId         String
+  group           PropertyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  alias           String
+  name            String
+  description     String        @default("")
+  dataTypeId      String
+  dataType        DataType      @relation(fields: [dataTypeId], references: [id], onDelete: Restrict)
+  mandatory       Boolean       @default(false)
+  validationRegex String        @default("")
+  sortOrder       Int           @default(0)
+}
+
+/// Content node (Content section)
+model Document {
+  id              String           @id @default(uuid())
+  name            String
+  documentTypeId  String
+  documentType    DocumentType     @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  parentId        String?
+  parent          Document?        @relation("DocumentTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children        Document[]       @relation("DocumentTree")
+  sortOrder       Int              @default(0)
+  urlSegment      String
+  /// draft property values keyed by property alias
+  values          Json             @default("{}")
+  published       Boolean          @default(false)
+  /// true when the draft differs from the published version
+  edited          Boolean          @default(true)
+  publishedName   String?
+  publishedValues Json?
+  publishedAt     DateTime?
+  trashed         Boolean          @default(false)
+  createdById     String?
+  updatedById     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  versions        ContentVersion[]
+
+  @@index([parentId])
+}
+
+model ContentVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  name       String
+  values     Json
+  published  Boolean  @default(false)
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+}
+
+/// Media library item: Folder | Image | File
+model Media {
+  id        String   @id @default(uuid())
+  name      String
+  mediaType String
+  parentId  String?
+  parent    Media?   @relation("MediaTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Media[]  @relation("MediaTree")
+  fileName  String?
+  filePath  String?
+  mimeType  String?
+  size      Int?
+  width     Int?
+  height    Int?
+  altText   String   @default("")
+  trashed   Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+model AuditEntry {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  action     String
+  comment    String   @default("")
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([entityId])
+}

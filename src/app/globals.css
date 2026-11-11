@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/* umb-killer design tokens — Umbraco's backoffice layout, rethemed in red */
+@theme {
+  --font-sans: "Lato", "Segoe UI", "Noto Sans Thai", system-ui, sans-serif;
+
+  --color-brand-50: #fff1f1;
+  --color-brand-100: #ffe0e0;
+  --color-brand-200: #ffc6c6;
+  --color-brand-300: #ff9e9e;
+  --color-brand-400: #f76767;
+  --color-brand-500: #ec3838;
+  --color-brand-600: #d61f1f;
+  --color-brand-700: #b31515;
+  --color-brand-800: #921515;
+  --color-brand-900: #781818;
+  --color-brand-950: #420707;
+
+  --color-header: #3a0a0e; /* top bar (Umbraco uses dark navy here) */
+  --color-header-hover: #5a1218;
+  --color-surface: #f4f1f1; /* workspace background */
+  --color-line: #e4dcdc; /* borders */
+  --color-selected: #fbd5d1; /* selected tree item */
+  --color-ink: #1f1416; /* text */
+  --color-muted: #6f6265;
+  --color-positive: #c41e24; /* "Save and publish" */
+  --color-positive-hover: #a5151b;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-surface text-ink antialiased;
+  font-size: 15px;
+}
+
+/* Rich text output (editor & public site) */
+.rte h1 { @apply text-3xl font-bold mt-4 mb-2; }
+.rte h2 { @apply text-2xl font-bold mt-4 mb-2; }
+.rte h3 { @apply text-xl font-bold mt-3 mb-2; }
+.rte p { @apply my-2 leading-relaxed; }
+.rte ul { @apply list-disc pl-6 my-2; }
+.rte ol { @apply list-decimal pl-6 my-2; }
+.rte a { @apply text-brand-700 underline; }
+.rte blockquote { @apply border-l-4 border-brand-300 pl-4 italic text-muted my-3; }
+.rte img { @apply max-w-full rounded my-2; }
+.rte code { @apply bg-surface px-1 rounded text-sm; }
+
+.focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-1;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes toast-in {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-in-right { animation: slide-in-right 0.22s ease-out; }
+.animate-fade-in { animation: fade-in 0.15s ease-out; }
+.animate-toast-in { animation: toast-in 0.2s ease-out; }

@@ -1,0 +1,7 @@
+node_modules
+.next
+.env
+uploads/*
+!uploads/.gitkeep
+next-env.d.ts
+*.tsbuildinfo
