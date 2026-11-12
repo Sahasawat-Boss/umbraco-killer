@@ -1,8 +1,10 @@
-# umb-killer 🔥
+# umbraco-killer 🔥
 
 An Umbraco-style CMS (backoffice + headless Delivery API) in a red theme, built with **Next.js 15 + Prisma + PostgreSQL**.
 
 > This is a research/learning project. It recreates Umbraco's *concepts and workflow* (sections, content tree, Document Types, Data Types, Delivery API). It does not use any Umbraco code or assets.
+
+<img width="1532" height="4056" alt="umbraco-killer-preview" src="https://github.com/user-attachments/assets/576eb9a6-f8bd-410f-ad2f-117c66b59cc4" />
 
 ## Requirements
 
