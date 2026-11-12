@@ -1,4 +1,5 @@
 import { Logo } from "./Logo";
+import { VersionBadge } from "./VersionBadge";
 
 /** Split-screen layout used by login & installer, like the Umbraco login page */
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
@@ -10,7 +11,10 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           <path d="M16 1.5 29 6v9.5c0 7.6-5.4 13.2-13 15-7.6-1.8-13-7.4-13-15V6z" fill="#fff" />
         </svg>
         <div className="relative flex h-full flex-col justify-between p-12">
-          <Logo />
+          <div className="flex items-center gap-3">
+            <Logo />
+            <VersionBadge className="border-white/30 text-white/80 hover:border-white/60 hover:text-white" />
+          </div>
           <div className="max-w-md text-white">
             <h2 className="text-4xl font-bold leading-tight">Content management, sharpened.</h2>
             <p className="mt-4 text-white/70">

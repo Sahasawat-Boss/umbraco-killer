@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Search, CircleHelp, LogOut, KeyRound, ExternalLink } from "lucide-react";
 import { LogoMark } from "../Logo";
+import { VersionBadge } from "../VersionBadge";
 import { cn, initials } from "@/lib/utils";
 import { Icon } from "@/lib/icons";
 import { searchAll, type SearchHit } from "@/actions/search";
@@ -39,12 +40,15 @@ export function Header({
   return (
     <>
       <header className="flex h-[60px] shrink-0 items-center bg-header px-4 text-white">
-        <Link href="/umbraco/section/content" className="mr-6 flex items-center gap-2" title="umb-killer">
-          <LogoMark />
-          <span className="hidden text-[16px] font-bold sm:inline">
-            umb<span className="text-brand-400">-killer</span>
-          </span>
-        </Link>
+        <div className="mr-6 flex items-center gap-2">
+          <Link href="/umbraco/section/content" className="flex items-center gap-2" title="umb-killer">
+            <LogoMark />
+            <span className="hidden text-[16px] font-bold sm:inline">
+              umb<span className="text-brand-400">-killer</span>
+            </span>
+          </Link>
+          <VersionBadge className="hidden border-white/30 text-white/80 hover:border-white/60 hover:text-white md:inline-flex" />
+        </div>
         <nav className="flex h-full items-stretch">
           {sections.map((s) => (
             <Link
