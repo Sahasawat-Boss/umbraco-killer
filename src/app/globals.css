@@ -68,3 +68,44 @@ body {
 .animate-slide-in-right { animation: slide-in-right 0.22s ease-out; }
 .animate-fade-in { animation: fade-in 0.15s ease-out; }
 .animate-toast-in { animation: toast-in 0.2s ease-out; }
+
+/* ---------- Public-site hero ---------- */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 40%, transparent 100%);
+}
+@keyframes hero-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-60px, 40px) scale(1.12); }
+}
+@keyframes hero-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(70px, -30px) scale(0.9); }
+}
+@keyframes hero-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.12) translate(-1%, -1%); }
+}
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(18px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@keyframes hero-shine {
+  to { background-position: 200% center; }
+}
+@keyframes hero-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+.hero-blob-a { animation: hero-drift-a 14s ease-in-out infinite; }
+.hero-blob-b { animation: hero-drift-b 18s ease-in-out infinite; }
+.hero-kenburns { animation: hero-kenburns 24s ease-out both alternate infinite; }
+.hero-rise { animation: hero-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.hero-gradient-text { background-size: 200% auto; animation: hero-shine 6s linear infinite; }
+.hero-bounce { animation: hero-bounce 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .hero * { animation: none !important; }
+}

@@ -6,6 +6,7 @@ import { isInstalled } from "@/lib/install";
 import { LogoMark } from "@/components/Logo";
 import { formatDate, safeDecode } from "@/lib/utils";
 import { BlockListView, isBlockList } from "@/components/site/Blocks";
+import { Hero } from "@/components/site/Hero";
 
 export const dynamic = "force-dynamic";
 
@@ -76,17 +77,13 @@ export default async function PublicPage({ params }: Props) {
       </header>
 
       {typeof p.heroTitle === "string" ? (
-        <section className="relative overflow-hidden bg-header text-white">
-          {hero?.url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={hero.url} alt="" className="absolute inset-0 size-full object-cover opacity-40" />
-          )}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,var(--accent),transparent_55%)] opacity-50" />
-          <div className="relative mx-auto max-w-6xl px-6 py-28">
-            <h1 className="max-w-3xl text-5xl font-bold leading-tight">{p.heroTitle}</h1>
-            {typeof p.heroText === "string" && <p className="mt-5 max-w-2xl text-lg text-white/80">{p.heroText}</p>}
-          </div>
-        </section>
+        <Hero
+          title={p.heroTitle}
+          text={typeof p.heroText === "string" ? p.heroText : undefined}
+          imageUrl={hero?.url}
+          eyebrow={rootApi.name}
+          ctas={nav.slice(0, 2)}
+        />
       ) : (
         <section className="border-b border-black/5 bg-surface">
           <div className="mx-auto max-w-3xl px-6 py-16">
