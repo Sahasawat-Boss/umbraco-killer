@@ -40,6 +40,35 @@ function refresh() {
   revalidatePath("/umbraco", "layout");
 }
 
+/**
+ * Where an Element Type is used as a block: Block List Data Types that offer it,
+ * and documents (incl. Recycle Bin) whose draft or published values contain such blocks.
+ * Without this check, deleting it would silently drop those blocks on the next save.
+ */
+async function elementTypeUsage(id: string) {
+  const blockLists = await db.dataType.findMany({ where: { editorAlias: "Killer.BlockList" }, select: { name: true, config: true } });
+  const dataTypes = blockLists
+    .filter((d) => {
+      const blocks = (d.config as { blocks?: unknown } | null)?.blocks;
+      return Array.isArray(blocks) && blocks.includes(id);
+    })
+    .map((d) => d.name);
+  const needle = `"contentTypeId": "${id}"`; // jsonb::text format
+  const docs = await db.$queryRaw<{ name: string }[]>`
+    SELECT name FROM "Document"
+    WHERE "values"::text LIKE '%' || ${needle} || '%' OR "publishedValues"::text LIKE '%' || ${needle} || '%'
+    LIMIT 5`;
+  return { dataTypes, documents: docs.map((d) => d.name) };
+}
+
+function usageMessage(name: string, u: { dataTypes: string[]; documents: string[] }) {
+  const parts = [
+    u.dataTypes.length && `Block List Data Type(s): ${u.dataTypes.join(", ")}`,
+    u.documents.length && `content: ${u.documents.join(", ")}${u.documents.length === 5 ? "…" : ""}`,
+  ].filter(Boolean);
+  return `${name} is used as a block in ${parts.join(" and ")}. Remove it from there first.`;
+}
+
 export async function saveDocumentType(input: DocumentTypeInput): Promise<SaveResult> {
   const user = await requireAdmin();
   const name = input.name.trim();
@@ -59,6 +88,15 @@ export async function saveDocumentType(input: DocumentTypeInput): Promise<SaveRe
       if (seen.has(pa)) return { ok: false, error: `Duplicate property alias "${pa}"` };
       if (!p.dataTypeId) return { ok: false, error: `Property "${p.name}" needs a data type` };
       seen.add(pa);
+    }
+  }
+
+  // Turning an Element Type back into a normal Document Type would orphan its blocks, too
+  if (input.id && !input.isElement) {
+    const before = await db.documentType.findUnique({ where: { id: input.id }, select: { isElement: true } });
+    if (before?.isElement) {
+      const usage = await elementTypeUsage(input.id);
+      if (usage.dataTypes.length || usage.documents.length) return { ok: false, error: usageMessage(name, usage) };
     }
   }
 
@@ -111,6 +149,12 @@ export async function deleteDocumentType(id: string): Promise<SaveResult> {
   const user = await requireAdmin();
   const used = await db.document.count({ where: { documentTypeId: id } });
   if (used) return { ok: false, error: `This Document Type is used by ${used} content item(s) and cannot be deleted` };
+  const type = await db.documentType.findUnique({ where: { id } });
+  if (!type) return { ok: false, error: "Not found" };
+  if (type.isElement) {
+    const usage = await elementTypeUsage(id);
+    if (usage.dataTypes.length || usage.documents.length) return { ok: false, error: usageMessage(type.name, usage) };
+  }
   await db.documentType.delete({ where: { id } });
   // remove from other types' allowed children
   const others = await db.documentType.findMany({ where: { allowedChildIds: { has: id } } });

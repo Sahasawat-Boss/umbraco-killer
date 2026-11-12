@@ -1,13 +1,20 @@
 import { db } from "./db";
 import { computeRoutes, normalizePath } from "./routes";
 import { asObject, type JsonObject } from "./utils";
+import { asBlocks } from "./editors";
+import { sanitizeRichText } from "./sanitize";
 
 /** Loads everything the Delivery API needs in a few queries (fine for small/medium sites). */
 export async function loadDeliveryContext() {
   const [docs, types, media] = await Promise.all([
     db.document.findMany({ where: { trashed: false }, orderBy: { sortOrder: "asc" } }),
     db.documentType.findMany({
-      include: { groups: { include: { properties: { include: { dataType: true } } } } },
+      include: {
+        groups: {
+          orderBy: { sortOrder: "asc" },
+          include: { properties: { orderBy: { sortOrder: "asc" }, include: { dataType: true } } },
+        },
+      },
     }),
     db.media.findMany({ where: { trashed: false } }),
   ]);
@@ -55,9 +62,14 @@ function linkTo(id: string, ctx: DeliveryContext) {
   };
 }
 
-export function contentToApi(doc: Doc, ctx: DeliveryContext, expand = true) {
-  const type = ctx.typeById.get(doc.documentTypeId);
-  const values = asObject(doc.publishedValues);
+type DocType = DeliveryContext["typeById"] extends Map<string, infer T> ? T : never;
+
+/** Umbraco-style Block List output: { items: [{ content: { contentType, id, properties }, settings }] } */
+export type ApiBlockList = {
+  items: { content: { contentType: string; id: string; properties: JsonObject }; settings: null }[];
+};
+
+function mapProperties(type: DocType | undefined, values: JsonObject, ctx: DeliveryContext, expand: boolean): JsonObject {
   const properties: JsonObject = {};
   for (const g of type?.groups ?? []) {
     for (const p of g.properties) {
@@ -77,13 +89,29 @@ export function contentToApi(doc: Doc, ctx: DeliveryContext, expand = true) {
           break;
         }
         case "Killer.RichText":
-          properties[p.alias] = { markup: typeof v === "string" ? v : "", blocks: [] };
+          properties[p.alias] = { markup: sanitizeRichText(v), blocks: [] };
           break;
+        case "Killer.BlockList": {
+          const items: ApiBlockList["items"] = [];
+          for (const b of asBlocks(v)) {
+            const et = ctx.typeById.get(b.contentTypeId);
+            if (b.hidden || !et) continue;
+            items.push({ content: { contentType: et.alias, id: b.key, properties: mapProperties(et, b.values, ctx, expand) }, settings: null });
+          }
+          properties[p.alias] = { items } satisfies ApiBlockList;
+          break;
+        }
         default:
           properties[p.alias] = v ?? null;
       }
     }
   }
+  return properties;
+}
+
+export function contentToApi(doc: Doc, ctx: DeliveryContext, expand = true) {
+  const type = ctx.typeById.get(doc.documentTypeId);
+  const properties = mapProperties(type, asObject(doc.publishedValues), ctx, expand);
   const root = rootOf(doc, ctx);
   return {
     id: doc.id,

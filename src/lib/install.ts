@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { db } from "./db";
-import { DEFAULT_DATA_TYPES, getEditor } from "./editors";
+import { DEFAULT_DATA_TYPES, getEditor, newBlockKey } from "./editors";
 
 export async function isInstalled() {
   return (await db.user.count()) > 0;
@@ -28,6 +28,131 @@ export async function runInstall(opts: { name: string; email: string; password: 
   return admin;
 }
 
+type P = { alias: string; name: string; dt: string; mandatory?: boolean; description?: string };
+
+function makeType(
+  alias: string,
+  name: string,
+  icon: string,
+  allowedAtRoot: boolean,
+  groups: { name: string; props: P[] }[],
+  description = "",
+  isElement = false,
+) {
+  return db.documentType.create({
+    data: {
+      alias,
+      name,
+      icon,
+      allowedAtRoot,
+      description,
+      isElement,
+      groups: {
+        create: groups.map((g, gi) => ({
+          name: g.name,
+          sortOrder: gi,
+          properties: {
+            create: g.props.map((p, pi) => ({
+              alias: p.alias,
+              name: p.name,
+              description: p.description ?? "",
+              dataTypeId: p.dt,
+              mandatory: p.mandatory ?? false,
+              sortOrder: pi,
+            })),
+          },
+        })),
+      },
+    },
+  });
+}
+
+/**
+ * Sample Element Types + a "Page Sections" Block List data type.
+ * Idempotent — reuses Element Types / Data Types that already exist (matched by alias / name).
+ */
+export async function installBlockKit() {
+  const dts = Object.fromEntries((await db.dataType.findMany()).map((d) => [d.name, d.id]));
+  const ensureDataType = async (name: string, editorAlias: string, config: Record<string, unknown> = {}) =>
+    dts[name] ??
+    (dts[name] = (
+      await db.dataType.create({
+        data: { name, editorAlias, config: { ...getEditor(editorAlias).defaultConfig, ...config } as object },
+      })
+    ).id);
+  const ensureElement = async (alias: string, name: string, icon: string, props: P[], description: string) =>
+    (await db.documentType.findUnique({ where: { alias } })) ??
+    (await makeType(alias, name, icon, false, [{ name: "Content", props }], description, true));
+
+  const text = await ensureDataType("Textstring", "Killer.TextBox");
+  const textarea = await ensureDataType("Textarea", "Killer.TextArea");
+  const rte = await ensureDataType("Richtext editor", "Killer.RichText");
+  const image = await ensureDataType("Image Media Picker", "Killer.MediaPicker");
+  const contentPicker = await ensureDataType("Content Picker", "Killer.ContentPicker");
+
+  const featureItem = await ensureElement(
+    "featureItem",
+    "Feature Item",
+    "Star",
+    [
+      { alias: "title", name: "Title", dt: text, mandatory: true },
+      { alias: "text", name: "Text", dt: textarea },
+    ],
+    "A single card inside a Feature Grid",
+  );
+  const featureItems = await ensureDataType("Feature Items", "Killer.BlockList", { blocks: [featureItem.id], min: 1, max: 6 });
+
+  const richTextBlock = await ensureElement("richTextBlock", "Rich Text", "Pilcrow", [{ alias: "text", name: "Text", dt: rte, mandatory: true }], "Formatted text");
+  const imageBlock = await ensureElement(
+    "imageBlock",
+    "Image",
+    "Image",
+    [
+      { alias: "image", name: "Image", dt: image, mandatory: true },
+      { alias: "caption", name: "Caption", dt: text },
+    ],
+    "A large image with caption",
+  );
+  const featureGrid = await ensureElement(
+    "featureGrid",
+    "Feature Grid",
+    "LayoutTemplate",
+    [
+      { alias: "heading", name: "Heading", dt: text },
+      { alias: "intro", name: "Intro", dt: textarea },
+      { alias: "features", name: "Features", dt: featureItems, description: "Nested blocks — 1 to 6 feature cards" },
+    ],
+    "Heading plus a grid of feature cards",
+  );
+  const callToAction = await ensureElement(
+    "callToAction",
+    "Call to Action",
+    "Megaphone",
+    [
+      { alias: "heading", name: "Heading", dt: text, mandatory: true },
+      { alias: "text", name: "Text", dt: textarea },
+      { alias: "buttonText", name: "Button text", dt: text },
+      { alias: "buttonLink", name: "Button link", dt: contentPicker },
+    ],
+    "Colored banner with a button",
+  );
+  const quoteBlock = await ensureElement(
+    "quoteBlock",
+    "Quote",
+    "Quote",
+    [
+      { alias: "quote", name: "Quote", dt: textarea, mandatory: true },
+      { alias: "author", name: "Author", dt: text },
+    ],
+    "A highlighted quote",
+  );
+
+  const sections = await ensureDataType("Page Sections", "Killer.BlockList", {
+    blocks: [richTextBlock.id, imageBlock.id, featureGrid.id, callToAction.id, quoteBlock.id],
+  });
+  return { sections, featureGrid, featureItem, callToAction, quoteBlock, richTextBlock, imageBlock };
+}
+
 async function installStarterKit(userId: string) {
   const dts = Object.fromEntries((await db.dataType.findMany()).map((d) => [d.name, d.id]));
 
@@ -40,40 +165,7 @@ async function installStarterKit(userId: string) {
     },
   });
 
-  type P = { alias: string; name: string; dt: string; mandatory?: boolean; description?: string };
-  const makeType = async (
-    alias: string,
-    name: string,
-    icon: string,
-    allowedAtRoot: boolean,
-    groups: { name: string; props: P[] }[],
-    description = "",
-  ) =>
-    db.documentType.create({
-      data: {
-        alias,
-        name,
-        icon,
-        allowedAtRoot,
-        description,
-        groups: {
-          create: groups.map((g, gi) => ({
-            name: g.name,
-            sortOrder: gi,
-            properties: {
-              create: g.props.map((p, pi) => ({
-                alias: p.alias,
-                name: p.name,
-                description: p.description ?? "",
-                dataTypeId: p.dt,
-                mandatory: p.mandatory ?? false,
-                sortOrder: pi,
-              })),
-            },
-          })),
-        },
-      },
-    });
+  const blockKit = await installBlockKit();
 
   const seo: { name: string; props: P[] } = {
     name: "SEO",
@@ -120,6 +212,7 @@ async function installStarterKit(userId: string) {
         { alias: "title", name: "Title", dt: dts["Textstring"]!, mandatory: true },
         { alias: "bodyText", name: "Body text", dt: dts["Richtext editor"]! },
         { alias: "image", name: "Image", dt: dts["Image Media Picker"]! },
+        { alias: "sections", name: "Sections", dt: blockKit.sections, description: "Add, reorder and edit page sections" },
       ],
     },
     seo,
@@ -143,7 +236,10 @@ async function installStarterKit(userId: string) {
       },
       {
         name: "Content",
-        props: [{ alias: "bodyText", name: "Body text", dt: dts["Richtext editor"]! }],
+        props: [
+          { alias: "bodyText", name: "Body text", dt: dts["Richtext editor"]! },
+          { alias: "sections", name: "Sections", dt: blockKit.sections, description: "Add, reorder and edit page sections" },
+        ],
       },
       {
         name: "Footer",
@@ -235,4 +331,30 @@ async function installStarterKit(userId: string) {
     },
     "hello-world",
   );
+
+  // Page sections on Home (Block List) — created last so the CTA can link to the blog
+  const block = (contentTypeId: string, values: Record<string, unknown>) => ({ key: newBlockKey(), contentTypeId, values });
+  const sections = [
+    block(blockKit.featureGrid.id, {
+      heading: "Why umb-killer?",
+      intro: "Everything below is a block. Reorder, hide or add sections from the backoffice.",
+      features: [
+        block(blockKit.featureItem.id, { title: "Document Types", text: "Model your content with groups and typed properties." }),
+        block(blockKit.featureItem.id, { title: "Block List", text: "Build pages from reusable sections and widgets." }),
+        block(blockKit.featureItem.id, { title: "Delivery API", text: "Fetch published content as JSON from any frontend." }),
+      ],
+    }),
+    block(blockKit.quoteBlock.id, { quote: "Content editors should move sections, not developers.", author: "Every editor, ever" }),
+    block(blockKit.callToAction.id, {
+      heading: "Read the latest news",
+      text: "See what the team has been shipping.",
+      buttonText: "Go to the blog",
+      buttonLink: blogDoc.id,
+    }),
+  ];
+  const homeValues = { ...(homeDoc.values as Record<string, unknown>), sections };
+  await db.document.update({
+    where: { id: homeDoc.id },
+    data: { values: homeValues as object, publishedValues: homeValues as object },
+  });
 }

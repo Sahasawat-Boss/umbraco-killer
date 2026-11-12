@@ -1,4 +1,5 @@
 import { checkApiKey, contentToApi, findByIdOrPath, json, loadDeliveryContext } from "@/lib/delivery";
+import { safeDecode } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ idOrPath
   if (denied) return denied;
   const { idOrPath } = await params;
   const ctx = await loadDeliveryContext();
-  const doc = findByIdOrPath(idOrPath.map(decodeURIComponent).join("/"), ctx);
+  const doc = findByIdOrPath(idOrPath.map(safeDecode).join("/"), ctx);
   if (!doc) return json({ title: "Not found", status: 404 }, 404);
   return json(contentToApi(doc, ctx));
 }

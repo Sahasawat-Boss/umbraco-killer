@@ -12,7 +12,8 @@ export type AuditAction =
   | "Restore"
   | "Delete"
   | "Rollback"
-  | "Login";
+  | "Login"
+  | "LoginFailed";
 
 export async function audit(
   entityType: string,

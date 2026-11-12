@@ -32,7 +32,7 @@ To start over with an empty database: `docker compose down -v && npm run db:up &
 | Global | Search (`Ctrl+K`), toasts, sign-in/installer screens, session cookie (JWT, 8 h). |
 
 ### Property editors
-Text Box, Text Area, Rich Text (toolbar, links, media insert, HTML source), Numeric, Decimal, Toggle, Date Picker (with optional time), Dropdown (single/multiple), Checkbox List, Radio Button List, Media Picker (single/multiple, images only), Content Picker, Tags, Color Picker, Email Address, Repeatable Textstrings, Label.
+Text Box, Text Area, Rich Text (toolbar, links, media insert, HTML source), Numeric, Decimal, Toggle, Date Picker (with optional time), Dropdown (single/multiple), Checkbox List, Radio Button List, Media Picker (single/multiple, images only), Content Picker, Tags, Color Picker, Email Address, Repeatable Textstrings, Label, **Block List** (reorderable sections/widgets built from Element Types, nestable).
 
 ## Delivery API (v2-style)
 
@@ -51,7 +51,7 @@ GET /api/delivery/v2/media?fetch=children:/ | children:{folderId}
 GET /api/delivery/v2/media/item/{id}
 ```
 
-Media pickers are expanded to media objects, content pickers to `{ id, name, contentType, route }`, and rich text to `{ markup, blocks }`.
+Media pickers are expanded to media objects, content pickers to `{ id, name, contentType, route }`, rich text to `{ markup, blocks }` (HTML is sanitized), and Block Lists to `{ items: [{ content, settings }] }`.
 Set `DELIVERY_API_KEY` in `.env` to require an `Api-Key` header.
 
 ## Routing
@@ -79,4 +79,4 @@ The design tokens live in `src/app/globals.css` (`@theme`). Change `--color-bran
 
 ## Not implemented yet (compared to Umbraco)
 
-Languages/variants and Dictionary, Members, Templates/partial views editor, Block List/Grid, Media Types/Member Types, scheduled publishing, redirect URL management, granular per-node permissions, Log viewer, and package/extension system.
+Languages/variants and Dictionary, Members, Templates/partial views editor, Block Grid, Media Types/Member Types, scheduled publishing, redirect URL management, granular per-node permissions, Log viewer, and package/extension system.

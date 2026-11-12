@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { X, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -256,13 +256,25 @@ export function Dialog({
   );
 }
 
+/** Open overlays, in opening order — Escape only closes the topmost one (panels can be nested). */
+const escStack: object[] = [];
+
 function useEsc(active: boolean, fn: () => void) {
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
   useEffect(() => {
     if (!active) return;
-    const h = (e: KeyboardEvent) => e.key === "Escape" && fn();
+    const entry = {};
+    escStack.push(entry);
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && escStack[escStack.length - 1] === entry) fnRef.current();
+    };
     window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [active, fn]);
+    return () => {
+      window.removeEventListener("keydown", h);
+      escStack.splice(escStack.indexOf(entry), 1);
+    };
+  }, [active]);
 }
 
 export function Tag({ children, tone = "default" }: { children: ReactNode; tone?: "default" | "positive" | "warning" | "danger" }) {

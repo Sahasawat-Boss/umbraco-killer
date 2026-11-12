@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { canDelete, requireUser } from "@/lib/auth";
 import { SimpleWorkspace } from "@/components/backoffice/Workspace";
 import { RecycleBinList } from "@/components/backoffice/RecycleBinList";
 
 export default async function MediaRecycleBin() {
-  await requireUser();
+  const user = await requireUser();
   const items = await db.media.findMany({
     where: { trashed: true, OR: [{ parentId: null }, { parent: { trashed: false } }] },
     include: { _count: { select: { children: true } } },
@@ -13,6 +13,7 @@ export default async function MediaRecycleBin() {
   return (
     <SimpleWorkspace title="Recycle Bin" icon="Skull">
       <RecycleBinList
+        canDelete={canDelete(user.role)}
         kind="media"
         items={items.map((i) => ({
           id: i.id,

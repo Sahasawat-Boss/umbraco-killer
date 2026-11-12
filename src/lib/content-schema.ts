@@ -13,17 +13,27 @@ export type PropertySchema = {
 export type GroupSchema = { id: string; name: string; properties: PropertySchema[] };
 export type DocTypeSchema = { id: string; name: string; alias: string; icon: string; groups: GroupSchema[] };
 
+const schemaInclude = {
+  groups: {
+    orderBy: { sortOrder: "asc" as const },
+    include: { properties: { orderBy: { sortOrder: "asc" as const }, include: { dataType: true } } },
+  },
+};
+
 export async function getDocTypeSchema(id: string): Promise<DocTypeSchema | null> {
-  const dt = await db.documentType.findUnique({
-    where: { id },
-    include: {
-      groups: {
-        orderBy: { sortOrder: "asc" },
-        include: { properties: { orderBy: { sortOrder: "asc" }, include: { dataType: true } } },
-      },
-    },
-  });
-  if (!dt) return null;
+  const dt = await db.documentType.findUnique({ where: { id }, include: schemaInclude });
+  return dt ? toSchema(dt) : null;
+}
+
+/** All Element Types (the building blocks of a Block List) */
+export async function getElementTypeSchemas(): Promise<DocTypeSchema[]> {
+  const types = await db.documentType.findMany({ where: { isElement: true }, orderBy: { name: "asc" }, include: schemaInclude });
+  return types.map(toSchema);
+}
+
+type DocTypeWithSchema = NonNullable<Awaited<ReturnType<typeof db.documentType.findUnique<{ where: { id: string }; include: typeof schemaInclude }>>>>;
+
+function toSchema(dt: DocTypeWithSchema): DocTypeSchema {
   return {
     id: dt.id,
     name: dt.name,

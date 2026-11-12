@@ -77,3 +77,8 @@ export function canAccessSection(role: string, section: string) {
 export function canPublish(role: string) {
   return role !== "writer";
 }
+
+/** Writers can create and edit, but not move content to the Recycle Bin or delete permanently. */
+export function canDelete(role: string) {
+  return role !== "writer";
+}

@@ -1,3 +1,4 @@
+import { safeDecode } from "./utils";
 import { db } from "./db";
 
 export interface RouteNode {
@@ -60,7 +61,7 @@ export async function getAllRoutes() {
 }
 
 export function normalizePath(path: string) {
-  let p = decodeURIComponent(path || "/");
+  let p = safeDecode(path || "/");
   if (!p.startsWith("/")) p = "/" + p;
   if (!p.endsWith("/")) p += "/";
   return p.normalize("NFC").toLowerCase();

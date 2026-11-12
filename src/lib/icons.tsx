@@ -68,6 +68,7 @@ import {
   Users,
   Video,
   Zap,
+  Blocks,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -143,6 +144,7 @@ export const ICONS: Record<string, LucideIcon> = {
   Palette,
   AtSign,
   Rows3,
+  Blocks,
 };
 
 /** Icons offered in the Document Type icon picker */

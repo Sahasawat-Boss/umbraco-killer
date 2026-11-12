@@ -60,3 +60,12 @@ export type JsonObject = Record<string, unknown>;
 export function asObject(v: unknown): JsonObject {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as JsonObject) : {};
 }
+
+/** decodeURIComponent that never throws — malformed input like "%E0%A4" is returned as-is (→ 404, not 500) */
+export function safeDecode(s: string) {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}

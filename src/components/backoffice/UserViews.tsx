@@ -13,7 +13,7 @@ import { formatDate, initials } from "@/lib/utils";
 export const ROLE_INFO: Record<string, { label: string; text: string }> = {
   admin: { label: "Administrators", text: "Full access to all sections, including Settings and Users." },
   editor: { label: "Editors", text: "Can create, edit, publish and delete content and media." },
-  writer: { label: "Writers", text: "Can create and save content, but cannot publish it." },
+  writer: { label: "Writers", text: "Can create and save content, but cannot publish or delete it." },
 };
 
 export function UsersTree() {

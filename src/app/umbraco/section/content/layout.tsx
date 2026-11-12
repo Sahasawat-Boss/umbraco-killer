@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { canPublish, requireUser } from "@/lib/auth";
+import { canDelete, canPublish, requireUser } from "@/lib/auth";
 import { Sidebar } from "@/components/backoffice/Tree";
 import { ContentTree } from "@/components/backoffice/ContentTree";
 
@@ -20,6 +20,7 @@ export default async function ContentLayout({ children }: { children: React.Reac
         <ContentTree
           docs={docs}
           canPublish={canPublish(user.role)}
+          canDelete={canDelete(user.role)}
           trashedCount={trashedCount}
           docTypes={types.map((t) => ({
             id: t.id,

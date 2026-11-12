@@ -24,6 +24,7 @@ import { Input, Select, Textarea, Toggle, Button } from "../ui";
 import { cn } from "@/lib/utils";
 import { MediaPickerPanel, ContentPickerPanel, useDocLookup, useMediaLookup } from "./Pickers";
 import { Icon } from "@/lib/icons";
+import { BlockListEditor } from "./BlockList";
 
 export interface EditorProps {
   editorAlias: string;
@@ -179,6 +180,8 @@ export function PropertyEditor({ editorAlias, config, value, onChange, invalid }
       return <MediaPickerEditor value={arr(value)} onChange={onChange} multiple={!!config.multiple} onlyImages={!!config.onlyImages} />;
     case "Killer.ContentPicker":
       return <ContentPickerEditor value={arr(value)} onChange={onChange} multiple={!!config.multiple} />;
+    case "Killer.BlockList":
+      return <BlockListEditor config={config} value={value} onChange={onChange} invalid={invalid} />;
     default:
       return <div className="text-sm text-muted">Unknown editor: {editorAlias}</div>;
   }

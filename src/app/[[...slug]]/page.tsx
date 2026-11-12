@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 import { contentToApi, findByIdOrPath, loadDeliveryContext, type DeliveryContext } from "@/lib/delivery";
 import { isInstalled } from "@/lib/install";
 import { LogoMark } from "@/components/Logo";
-import { formatDate } from "@/lib/utils";
+import { formatDate, safeDecode } from "@/lib/utils";
+import { BlockListView, isBlockList } from "@/components/site/Blocks";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ type Props = { params: Promise<{ slug?: string[] }> };
 
 async function resolve(slug?: string[]) {
   const ctx = await loadDeliveryContext();
-  const path = "/" + (slug ?? []).map(decodeURIComponent).join("/");
+  const path = "/" + (slug ?? []).map(safeDecode).join("/");
   const doc = findByIdOrPath(path, ctx);
   return { ctx, doc };
 }
@@ -50,6 +51,11 @@ export default async function PublicPage({ params }: Props) {
   const accent = (rootApi.properties.accentColor as string) || "#c62828";
   const hero = p.heroImage as { url: string } | null;
   const image = p.image as { url: string; altText: string } | null;
+  // Every Block List property on the page, in Document Type order
+  const blockLists = Object.entries(p).filter(([, v]) => isBlockList(v) && v.items.length > 0);
+  const bodyMarkup = (p.bodyText as { markup?: string } | null)?.markup;
+  const tags = Array.isArray(p.tags) ? (p.tags as string[]) : [];
+  const hasMain = !!image?.url || !!bodyMarkup || tags.length > 0 || children.length > 0;
 
   return (
     <div className="min-h-screen bg-white" style={{ ["--accent" as string]: accent }}>
@@ -97,23 +103,29 @@ export default async function PublicPage({ params }: Props) {
         </section>
       )}
 
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        {image?.url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image.url} alt={image.altText || ""} className="mb-8 w-full rounded-lg" />
-        )}
-        {(p.bodyText as { markup?: string } | null)?.markup && (
-          <div className="rte text-[17px]" dangerouslySetInnerHTML={{ __html: (p.bodyText as { markup: string }).markup }} />
-        )}
-        {Array.isArray(p.tags) && p.tags.length > 0 && (
-          <div className="mt-8 flex flex-wrap gap-2">
-            {(p.tags as string[]).map((t) => (
-              <span key={t} className="rounded-full bg-surface px-3 py-1 text-sm">#{t}</span>
-            ))}
-          </div>
-        )}
-        {children.length > 0 && <ChildList items={children} />}
-      </main>
+      {hasMain && (
+        <main className="mx-auto max-w-3xl px-6 py-12">
+          {image?.url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image.url} alt={image.altText || ""} className="mb-8 w-full rounded-lg" />
+          )}
+          {bodyMarkup && <div className="rte text-[17px]" dangerouslySetInnerHTML={{ __html: bodyMarkup }} />}
+          {tags.length > 0 && (
+            <div className="mt-8 flex flex-wrap gap-2">
+              {tags.map((t) => (
+                <span key={t} className="rounded-full bg-surface px-3 py-1 text-sm">#{t}</span>
+              ))}
+            </div>
+          )}
+          {children.length > 0 && <ChildList items={children} />}
+        </main>
+      )}
+
+      {blockLists.map(([alias, v]) => (
+        <div key={alias} data-property={alias} className="pb-8">
+          <BlockListView value={v as Parameters<typeof BlockListView>[0]["value"]} />
+        </div>
+      ))}
 
       <footer className="border-t border-black/5 bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-muted">

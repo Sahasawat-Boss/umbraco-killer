@@ -2,6 +2,13 @@
 
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { getElementTypeSchemas, type DocTypeSchema } from "@/lib/content-schema";
+
+/** Element Types with their full property schema — used by the Block List editor */
+export async function listElementTypes(): Promise<DocTypeSchema[]> {
+  await requireUser();
+  return getElementTypeSchemas();
+}
 
 export type PickerDoc = { id: string; parentId: string | null; name: string; icon: string; published: boolean };
 export type PickerMedia = {

@@ -4,20 +4,22 @@ import { canPublish, requireUser } from "@/lib/auth";
 import { getAncestors, getDocTypeSchema } from "@/lib/content-schema";
 import { getPublishedRoutes } from "@/lib/routes";
 import { ContentEditor } from "@/components/backoffice/ContentEditor";
-import { asObject } from "@/lib/utils";
+import { cleanStoredValues } from "@/lib/content-values";
 
 export default async function EditContentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireUser();
   const doc = await db.document.findUnique({ where: { id } });
   if (!doc || doc.trashed) notFound();
-  const [schema, ancestors, routes, versions, history, users] = await Promise.all([
+  const [schema, ancestors, routes, versions, history, users, values] = await Promise.all([
     getDocTypeSchema(doc.documentTypeId),
     getAncestors(doc.parentId),
     getPublishedRoutes(),
     db.contentVersion.findMany({ where: { documentId: id }, orderBy: { createdAt: "desc" }, take: 20 }),
     db.auditEntry.findMany({ where: { entityId: id }, orderBy: { createdAt: "desc" }, take: 30, include: { user: true } }),
     db.user.findMany({ select: { id: true, name: true } }),
+    // cleaned + sanitized: stored HTML is injected into the Rich Text editor via innerHTML
+    cleanStoredValues(doc.documentTypeId, doc.values),
   ]);
   if (!schema) notFound();
   const userName = (uid: string | null) => users.find((u) => u.id === uid)?.name ?? "Unknown";
@@ -36,7 +38,7 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
       doc={{
         id: doc.id,
         name: doc.name,
-        values: asObject(doc.values),
+        values,
         published: doc.published,
         edited: doc.edited,
         createdAt: doc.createdAt.toISOString(),

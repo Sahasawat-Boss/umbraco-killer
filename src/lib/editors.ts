@@ -3,7 +3,7 @@
  * A Data Type = one of these editors + a config object.
  */
 
-export type ConfigFieldType = "number" | "text" | "boolean" | "items" | "colors";
+export type ConfigFieldType = "number" | "text" | "boolean" | "items" | "colors" | "elementTypes";
 
 export interface ConfigField {
   key: string;
@@ -174,6 +174,23 @@ export const EDITORS: EditorDefinition[] = [
     defaultConfig: { min: 0, max: 0 },
   },
   {
+    alias: "Killer.BlockList",
+    name: "Block List",
+    icon: "Blocks",
+    description: "Reorderable sections / widgets built from Element Types",
+    configFields: [
+      {
+        key: "blocks",
+        label: "Available blocks",
+        description: "Element Types editors can add. Leave all unchecked to allow every Element Type.",
+        type: "elementTypes",
+      },
+      { key: "min", label: "Minimum number of blocks", type: "number" },
+      { key: "max", label: "Maximum number of blocks", type: "number" },
+    ],
+    defaultConfig: { blocks: [], min: 0, max: 0 },
+  },
+  {
     alias: "Killer.Label",
     name: "Label",
     icon: "Tag",
@@ -187,6 +204,24 @@ export const EDITOR_MAP = new Map(EDITORS.map((e) => [e.alias, e]));
 
 export function getEditor(alias: string) {
   return EDITOR_MAP.get(alias) ?? EDITORS[0];
+}
+
+/** One block inside a Block List value. `values` is keyed by the Element Type's property aliases. */
+export type BlockItem = { key: string; contentTypeId: string; values: Record<string, unknown>; hidden?: boolean };
+
+export function asBlocks(v: unknown): BlockItem[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((b): b is BlockItem => !!b && typeof b === "object" && typeof b.key === "string" && typeof b.contentTypeId === "string")
+    .map((b) => ({ ...b, values: b.values && typeof b.values === "object" && !Array.isArray(b.values) ? b.values : {} }));
+}
+
+export function newBlockKey() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
 }
 
 export function isEmptyValue(v: unknown) {
@@ -217,4 +252,5 @@ export const DEFAULT_DATA_TYPES: { name: string; editorAlias: string; config?: R
   { name: "Email Address", editorAlias: "Killer.EmailAddress" },
   { name: "Repeatable Textstrings", editorAlias: "Killer.MultipleTextString" },
   { name: "Label", editorAlias: "Killer.Label" },
+  { name: "Block List", editorAlias: "Killer.BlockList" },
 ];

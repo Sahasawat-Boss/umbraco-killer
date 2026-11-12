@@ -10,6 +10,7 @@ import { EDITORS, getEditor, type ConfigField } from "@/lib/editors";
 import { Icon } from "@/lib/icons";
 import { saveDataType } from "@/actions/settings";
 import { PropertyEditor } from "../editors/PropertyEditor";
+import { useElementTypes } from "../editors/BlockList";
 
 export function DataTypeEditor({
   dataType,
@@ -124,6 +125,43 @@ export function DataTypeEditor({
   );
 }
 
+function ElementTypesInput({ value, onChange }: { value: unknown; onChange: (v: unknown) => void }) {
+  const types = useElementTypes();
+  const selected = Array.isArray(value) ? (value as string[]) : [];
+  if (!types) return <div className="text-sm text-muted">Loading…</div>;
+  if (!types.length)
+    return (
+      <p className="text-sm text-muted">
+        No Element Types yet. Create a Document Type under{" "}
+        <a className="text-brand-700 underline" href="/umbraco/section/settings/document-types">Settings › Document Types</a> and turn on{" "}
+        <b>Is an Element Type</b>.
+      </p>
+    );
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {types.map((t) => {
+        const on = selected.includes(t.id);
+        return (
+          <label
+            key={t.id}
+            className={`flex cursor-pointer items-center gap-3 rounded-[4px] border px-3 py-2 ${on ? "border-brand-500 bg-brand-50" : "border-line bg-white"}`}
+          >
+            <input
+              type="checkbox"
+              className="size-4 accent-brand-600"
+              checked={on}
+              onChange={(e) => onChange(e.target.checked ? [...selected, t.id] : selected.filter((x) => x !== t.id))}
+            />
+            <Icon name={t.icon} className="size-4 text-brand-700" />
+            <span className="text-sm font-bold">{t.name}</span>
+            <span className="ml-auto font-mono text-[11px] text-muted">{t.alias}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
 function ConfigInput({ field, value, onChange }: { field: ConfigField; value: unknown; onChange: (v: unknown) => void }) {
   const [draft, setDraft] = useState("");
   switch (field.type) {
@@ -140,6 +178,8 @@ function ConfigInput({ field, value, onChange }: { field: ConfigField; value: un
       return <Input value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />;
     case "boolean":
       return <Toggle checked={!!value} onChange={onChange} />;
+    case "elementTypes":
+      return <ElementTypesInput value={value} onChange={onChange} />;
     case "items":
     case "colors": {
       const list = Array.isArray(value) ? (value as string[]) : [];

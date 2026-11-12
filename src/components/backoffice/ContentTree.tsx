@@ -45,7 +45,19 @@ type Modal =
   | { kind: "delete"; doc: TreeDoc }
   | null;
 
-export function ContentTree({ docs, docTypes, trashedCount, canPublish }: { docs: TreeDoc[]; docTypes: TreeDocType[]; trashedCount: number; canPublish: boolean }) {
+export function ContentTree({
+  docs,
+  docTypes,
+  trashedCount,
+  canPublish,
+  canDelete,
+}: {
+  docs: TreeDoc[];
+  docTypes: TreeDocType[];
+  trashedCount: number;
+  canPublish: boolean;
+  canDelete: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const toast = useToast();
@@ -86,7 +98,9 @@ export function ContentTree({ docs, docTypes, trashedCount, canPublish }: { docs
       { label: "Move to", icon: "Plane", onClick: () => setModal({ kind: "move", doc }), separatorBefore: true },
       { label: "Copy to", icon: "Images", onClick: () => setModal({ kind: "copy", doc }) },
       { label: "Sort children", icon: "List", onClick: () => setModal({ kind: "sort", parentId: doc.id }) },
-      { label: "Delete", icon: "Skull", danger: true, separatorBefore: true, onClick: () => setModal({ kind: "delete", doc }) },
+      ...(canDelete
+        ? [{ label: "Delete", icon: "Skull", danger: true, separatorBefore: true, onClick: () => setModal({ kind: "delete", doc }) }]
+        : []),
     ];
   };
 

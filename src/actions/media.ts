@@ -5,7 +5,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { canDelete, requireUser } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { imageSize } from "@/lib/image-size";
 import type { SaveResult } from "./content";
@@ -112,6 +112,10 @@ export async function restoreMedia(id: string): Promise<SaveResult> {
 
 export async function deleteMedia(id: string): Promise<SaveResult> {
   const user = await requireUser();
+  if (!canDelete(user.role)) return { ok: false, error: "You don't have permission to delete media permanently." };
+  const target = await db.media.findUnique({ where: { id }, select: { trashed: true } });
+  if (!target) return { ok: false, error: "Not found" };
+  if (!target.trashed) return { ok: false, error: "Only items in the Recycle Bin can be deleted permanently" };
   const ids = await mediaDescendants(id);
   const items = await db.media.findMany({ where: { id: { in: ids } } });
   for (const m of items) {
@@ -124,7 +128,8 @@ export async function deleteMedia(id: string): Promise<SaveResult> {
 }
 
 export async function emptyMediaRecycleBin(): Promise<SaveResult> {
-  await requireUser();
+  const user = await requireUser();
+  if (!canDelete(user.role)) return { ok: false, error: "You don't have permission to empty the Recycle Bin." };
   const roots = await db.media.findMany({
     where: { trashed: true, OR: [{ parentId: null }, { parent: { trashed: false } }] },
     select: { id: true },

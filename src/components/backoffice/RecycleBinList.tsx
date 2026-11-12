@@ -12,7 +12,7 @@ import { deleteMedia, emptyMediaRecycleBin, restoreMedia } from "@/actions/media
 
 type Item = { id: string; name: string; icon: string; type: string; deletedAt: string; children: number };
 
-export function RecycleBinList({ kind, items }: { kind: "content" | "media"; items: Item[] }) {
+export function RecycleBinList({ kind, items, canDelete }: { kind: "content" | "media"; items: Item[]; canDelete: boolean }) {
   const router = useRouter();
   const toast = useToast();
   const [confirm, setConfirm] = useState<{ id?: string; name: string } | null>(null);
@@ -33,6 +33,7 @@ export function RecycleBinList({ kind, items }: { kind: "content" | "media"; ite
       <Box
         headline={`${items.length} item(s) in the Recycle Bin`}
         actions={
+          canDelete &&
           <Button look="danger" compact onClick={() => setConfirm({ name: "everything in the Recycle Bin" })}>
             <Trash2 className="size-4" /> Empty Recycle Bin
           </Button>
@@ -70,9 +71,11 @@ export function RecycleBinList({ kind, items }: { kind: "content" | "media"; ite
                   >
                     <RotateCcw className="size-3.5" /> Restore
                   </Button>
-                  <Button compact look="ghost" className="text-brand-700" onClick={() => setConfirm({ id: i.id, name: i.name })}>
-                    Delete
-                  </Button>
+                  {canDelete && (
+                    <Button compact look="ghost" className="text-brand-700" onClick={() => setConfirm({ id: i.id, name: i.name })}>
+                      Delete
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
