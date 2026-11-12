@@ -4,22 +4,63 @@ An Umbraco-style CMS (backoffice + headless Delivery API) in a red theme, built 
 
 > This is a research/learning project. It recreates Umbraco's *concepts and workflow* (sections, content tree, Document Types, Data Types, Delivery API). It does not use any Umbraco code or assets.
 
-## Quick start
+## Requirements
+
+- **Node.js 20+** (`node -v`)
+- **Docker** (Docker Desktop on Windows/macOS) for the bundled Postgres 16 — or any Postgres 14+ you already have
+- Free ports **3000** (app) and **5434** (database)
+
+## Quick start (fresh clone)
 
 ```bash
-npm install                 # also runs prisma generate
-npm run db:up               # Postgres 16 in Docker on port 5434
-npm run db:push             # create tables
+git clone https://github.com/Sahasawat-Boss/umbraco-killer.git
+cd umbraco-killer
+npm install                 # dependencies + prisma generate
+npm run setup               # .env, Postgres in Docker, tables
 npm run dev                 # http://localhost:3000
 ```
 
-On first visit you're sent to **/install**: create the admin account and (optionally) the starter kit with sample Document Types, content and Block List sections (Rich Text, Image, Feature Grid, Call to Action, Quote).
+`npm run setup` does the following, and is safe to run again:
+1. creates `.env` from `.env.example` with a random `AUTH_SECRET` (an existing `.env` is never overwritten)
+2. starts Postgres with `docker compose up -d` and waits until it accepts connections
+3. creates the tables (`prisma db push`)
+
+Open `http://localhost:3000`. The first visit takes you to **/install**: create the admin account and (optionally) the starter kit with sample Document Types, content and Block List sections (Rich Text, Image, Feature Grid, Call to Action, Quote).
 
 - Backoffice: `http://localhost:3000/umbraco`
 - Public site (default template): `http://localhost:3000/`
 - Delivery API: `http://localhost:3000/api/delivery/v2/content`
 
-To start over with an empty database: `docker compose down -v && npm run db:up && npm run db:push`.
+> Content, users and uploaded media live in your local database and `./uploads`; they are **not** in git. Each new machine starts empty and goes through /install.
+
+### Using your own Postgres (no Docker)
+
+Create an empty database, then:
+
+```bash
+cp .env.example .env        # set DATABASE_URL to your database, AUTH_SECRET to a long random string
+npm run setup -- --no-docker
+```
+
+### Manual steps (what setup does)
+
+```bash
+cp .env.example .env        # then change AUTH_SECRET
+npm run db:up               # Postgres 16 in Docker on port 5434
+npm run db:push             # create tables
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `Docker is not running` | Start Docker Desktop and run `npm run setup` again. |
+| `AUTH_SECRET must be set (16+ chars)` | `.env` is missing or the secret is too short. Run `npm run setup`, or edit `.env`. |
+| `Can't reach database server at localhost:5434` | Postgres isn't running: `npm run db:up`. Check `docker compose logs db`. |
+| Port 5434 or 3000 already in use | Change the left side of `"5434:5432"` in `docker-compose.yml` and the port in `DATABASE_URL`; or run the app with `npm run dev -- -p 3001`. |
+| `npm install` / image pull fails on a company network | Configure your proxy for npm (`npm config set proxy …`) and Docker Desktop (Settings › Resources › Proxies). |
+
+To start over with an empty database: `docker compose down -v && npm run setup`.
 
 ## Features
 
@@ -82,6 +123,7 @@ src/components/site/Blocks.tsx  block renderers for the public site
 src/app/umbraco/...             backoffice routes
 src/app/api/delivery/v2/...     Delivery API
 src/app/[[...slug]]             public site default template
+scripts/setup.mjs               one-shot local setup (npm run setup)
 ```
 
 ## Theme

@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "umb-killer — a red-themed, Umbraco-style headless/hybrid CMS built on Next.js + Postgres",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "setup": "node scripts/setup.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
